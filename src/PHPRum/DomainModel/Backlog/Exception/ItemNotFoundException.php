@@ -1,8 +1,7 @@
 <?php
-
+declare(strict_types=1);
 
 namespace PHPRum\DomainModel\Backlog\Exception;
-
 
 class ItemNotFoundException extends BacklogException
 {
@@ -13,6 +12,6 @@ class ItemNotFoundException extends BacklogException
      */
     public function __construct(int $id)
     {
-        parent::__construct('Item not found by id: ' . $id, self::ITEM_NOT_FOUND);
+        parent::__construct('Item not found by id: '.$id, self::ITEM_NOT_FOUND);
     }
 }

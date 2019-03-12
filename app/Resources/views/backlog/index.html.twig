@@ -2,21 +2,18 @@
 
 {% block javascripts %}
 
+    {{ parent() }}
     <script>
-              var items = [];
+        var items = [];
         {% for item in items %}
             items.push({
                 id: {{ item.id }},
                 priority: {{ item.priority|default(0) }}
             });
         {% endfor %}
-        var baseUrl = '{{ app.request.getSchemeAndHttpHost() }}';
-
 
     </script>
-    <script src={{ asset('build/item_list.js') }}>
-
-    </script>
+    <script src={{ asset('build/item_list.js') }}></script>
 
 {% endblock %}
 
@@ -26,8 +23,8 @@
             <div class="col-md-12">
 
                 <span>This is Your backlog</span>
-                <div class="btn pull-right">
-                    <a href="{{ path('add_backlog_item') }}">Add Item</a>
+                <div id="add_item" class="btn pull-right">
+                    <a href="{{ path('item_add') }}">Add Item</a>
                 </div>
             </div>
 
@@ -68,7 +65,7 @@
                                 {{ item.createdAt|date('Y-m-d h:i:s') }}
                             </td>
                             <td>
-                                {{ item.estimate }}
+                                {{ item.getEstimate }}
                             </td>
                             <td>
                                 {% if item.epic %}
@@ -84,10 +81,10 @@
                                 {{ item.status }}
                             </td>
                             <td>
-                                <a href="{{ path('edit_item', {'id': item.id}) }}" >Edit</a>
+                                <a href="{{ path('item_edit', {'id': item.id}) }}" >Edit</a>
                             </td>
                             <td>
-                                <a href="{{ path('delete_item', {'id': item.id}) }}" >Delete</a>
+                                <a href="{{ path('item_delete', {'id': item.id}) }}" >Delete</a>
                             </td>
                         </tr>
                     {% endfor %}

@@ -1,19 +1,13 @@
 <?php
-
+declare(strict_types=1);
 
 namespace PHPRum\DomainModel\Backlog;
-
 
 use PHPRum\DomainModel\Backlog\Exception\StatusNotAllowed;
 
 abstract class Item
 {
     const ALLOWED_ESTIMATES = [1, 2, 3, 5, 8, 13, 21];
-    const STAUS_IN_PROGRESS = 'in_progress';
-    const STATUS_NEW = 'new';
-    const STATUS_DONE = 'done';
-    const ALLOWED_STATUSES = [self::STATUS_NEW, self::STAUS_IN_PROGRESS, self::STATUS_DONE];
-
 
     /**
      * @var Label[]
@@ -29,9 +23,9 @@ abstract class Item
     protected $name;
 
     /**
-     * @var string
+     * @var ItemStatus
      */
-    protected $status = self::STATUS_NEW;
+    protected $status;
     /**
      * @var int
      */
@@ -61,7 +55,7 @@ abstract class Item
     /**
      * @param string $description
      */
-    public function setDescription(string $description) : void
+    public function setDescription(string $description): void
     {
         $this->description = $description;
     }
@@ -83,10 +77,16 @@ abstract class Item
     }
 
     /**
-     * @return string
+     * @return ItemStatus
      */
-    public function getStatus(): ?string
+    public function getStatus(): ItemStatus
     {
+        if(is_null($this->status)){
+            $this->status = ItemStatus::NEW();
+        }
+        if(is_string($this->status)){
+            $this->status = new ItemStatus($this->status);
+        }
         return $this->status;
     }
 
@@ -127,7 +127,7 @@ abstract class Item
     /**
      * @param Label[] $labels
      */
-    public function setLabels(array $labels) : void
+    public function setLabels(array $labels): void
     {
         $this->labels = $labels;
     }
@@ -135,7 +135,7 @@ abstract class Item
     /**
      * @param Label $label
      */
-    public function addLabel(Label $label) : void
+    public function addLabel(Label $label): void
     {
         $this->labels[] = $label;
     }
@@ -143,7 +143,7 @@ abstract class Item
     /**
      * @param Label $labelToRemove
      */
-    public function removeLabel(Label $labelToRemove) : void
+    public function removeLabel(Label $labelToRemove): void
     {
         foreach ($this->labels as $key => $label) {
             if ($label->getId() === $labelToRemove->getId()) {
@@ -157,42 +157,47 @@ abstract class Item
      */
     public function isDone(): bool
     {
-        return $this->status === self::STATUS_DONE;
+        return $this->status->isDone();
     }
 
     /**
-     * @param string $status
+     * @param ItemStatus $status
+     *
      * @throws StatusNotAllowed
      */
-    public function setStatus(string $status) : void
+    public function changeStatus(ItemStatus $status): void
     {
-        if (!$this->isStatusAllowed($status)) {
-            throw StatusNotAllowed::create($status, self::ALLOWED_STATUSES);
-        }
         $this->status = $status;
     }
 
     /**
+     * @param ItemStatus $status
+     * Aliast for changeStatus
+     *
+     * @throws StatusNotAllowed
+     */
+    public function setStatus(ItemStatus $status): void
+    {
+        $this->changeStatus($status);
+    }
+
+    /**
      * @param string $status
+     *
      * @return bool
      */
     protected function isStatusAllowed(string $status): bool
     {
-        return in_array($status, self::ALLOWED_STATUSES, true);
+        return ItemStatus::isValid($status);
     }
-
 
     /**
      * @return bool
      */
     abstract public function isInSprint(): bool;
 
-    /**
-     *
-     */
-    public function done() : void
+    public function done(): void
     {
-        $this->setStatus(self::STATUS_DONE);
+        $this->changeStatus(ItemStatus::DONE());
     }
-
 }

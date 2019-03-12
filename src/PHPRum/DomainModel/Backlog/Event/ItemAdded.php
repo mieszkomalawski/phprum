@@ -1,8 +1,7 @@
 <?php
-
+declare(strict_types=1);
 
 namespace PHPRum\DomainModel\Backlog\Event;
-
 
 use PHPRum\Event;
 
@@ -22,6 +21,7 @@ class ItemAdded implements Event
 
     /**
      * ItemAdded constructor.
+     *
      * @param string $itemName
      */
     public function __construct(string $itemName)
@@ -29,7 +29,6 @@ class ItemAdded implements Event
         $this->itemName = $itemName;
         $this->date = new \DateTime();
     }
-
 
     public function getName(): string
     {
@@ -51,5 +50,4 @@ class ItemAdded implements Event
     {
         return $this->date;
     }
-
 }

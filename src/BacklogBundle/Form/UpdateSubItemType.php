@@ -1,18 +1,17 @@
 <?php
 
-
 namespace BacklogBundle\Form;
 
-
-use BacklogBundle\Entity\CompoundItem;
+use BacklogBundle\CustomPropertyAccessor;
 use Ivory\CKEditorBundle\Form\Type\CKEditorType;
+use PHPRum\DomainModel\Backlog\ItemStatus;
 use PHPRum\DomainModel\Backlog\SubItem;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\CallbackTransformer;
+use Symfony\Component\Form\Extension\Core\DataMapper\PropertyPathMapper;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\Form\FormInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class UpdateSubItemType extends AbstractType
@@ -20,7 +19,7 @@ class UpdateSubItemType extends AbstractType
     public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefaults([
-            'data_class' => SubItem::class
+            'data_class' => SubItem::class,
         ]);
     }
 
@@ -30,8 +29,13 @@ class UpdateSubItemType extends AbstractType
             ->add('name', TextType::class, ['required' => false])
             ->add('description', CKEditorType::class, ['required' => false, 'empty_data' => ''])
             ->add('status', TaskStatusType::class, ['required' => false])
-            ->add('Save', SubmitType::class)
-            ->getForm();
-    }
+            ->setDataMapper(new PropertyPathMapper(
+                new CustomPropertyAccessor(['status' => 'changeStatus'])
+            ))
+            ->add('Save', SubmitType::class);
 
+        $builder
+            ->get('status')
+            ->addModelTransformer(new ItemStatusTransformer())->getForm();
+    }
 }

@@ -1,39 +1,41 @@
 <?php
 
-
 namespace BacklogBundle\Controller;
 
-
 use BacklogBundle\Entity\Sprint;
+use BacklogBundle\Form\CreateSprintType;
+use Doctrine\Common\Persistence\ObjectRepository;
 use PHPRum\Commands\Backlog\CreateSrpint;
 use PHPRum\Commands\Backlog\StartSprint;
+use PHPRum\DomainModel\Backlog\SprintDuration;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 class SprintController extends Controller
 {
-
     /**
-     * @Route("/sprint/", name="sprint_list")
+     * @Route("/sprint/", name="sprint_index")
      * @Method({"GET"})
      */
     public function listSprintsAction()
     {
         $repository = $this->getRepository();
+
         return $this->render(
-            'backlog/sprint_list.html.twig',
+            'sprint/index.html.twig',
             [
-                'items' => $repository->findByCreator($this->getUser())
+                'items' => $repository->findByCreator($this->getUser()),
             ]
             );
     }
 
     /**
-     * @Route("/sprint/{id}", name="show_sprint")
+     * @Route("/sprint/{id}", name="sprint_show")
      * @Method({"GET"})
      */
     public function showSprintAction($id)
@@ -43,54 +45,45 @@ class SprintController extends Controller
         $sprint = $repository->find($id);
 
         return $this->render(
-            'backlog/sprint_item_list.html.twig',
+            'sprint/sprint_item_list.html.twig',
             [
                 'items' => $sprint->getItems(),
                 'points_sum' => $sprint->getTotalPoints(),
-                'sprint' => $sprint
+                'sprint' => $sprint,
             ]
         );
     }
 
     /**
-     * @Route("/sprint/new", name="create_sprint")
+     * @Route("/sprint/new", name="sprint_new")
      * @Method({"POST", "GET"})
      */
     public function addSprintAction(Request $request)
     {
-        $createSprintCommand = new CreateSrpint($this->getDoctrine()->getManager());
-
-        $form = $this->createFormBuilder($createSprintCommand)
-            ->add('duration', ChoiceType::class, [
-                'choices' => [
-                    'One week' => '1_week',
-                    'Two weeks' => '2_week',
-                    'Three weeks' => '3_week',
-                    'Four weeks' => '4_week'
-                ]
-            ])
-            ->add('Save', SubmitType::class)
-            ->getForm();
+        $user = $this->getUser();
+        $form = $this->createForm(CreateSprintType::class, null, ['user' => $user]);
 
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            /** @var CreateSrpint $command */
-            $command = $form->getData();
-            $command->setUser($this->getUser());
-            $command->execute();
+            /** @var Sprint $sprint */
+            $sprint = $form->getData();
+            $manager = $this->getDoctrine()->getManager();
+            $manager->persist($sprint);
+            $manager->flush();
 
             $this->addFlash('notice', 'New sprint added');
-            return $this->redirectToRoute('list_backlog_items');
+
+            return $this->redirectToRoute(BacklogController::LIST_BACKLOG_ITEMS);
         }
 
-        return $this->render('backlog/add_sprint.html.twig', [
-            'form' => $form->createView()
+        return $this->render('sprint/new.html.twig', [
+            'form' => $form->createView(),
         ]);
     }
 
     /**
-     * @Route("/sprint/start/{id}", name="start_sprint")
+     * @Route("/sprint/{id}/start", name="sprint_start")
      * @Method({"GET"})
      */
     public function startSprintAction($id)
@@ -99,15 +92,17 @@ class SprintController extends Controller
         /** @var Sprint $sprint */
         $sprint = $repository->find($id);
 
-        $command = new StartSprint($this->getDoctrine()->getManager(), $sprint);
+        $sprint->start();
 
-        $command->execute();
+        $manager = $this->getDoctrine()->getManager();
+        $manager->persist($sprint);
+        $manager->flush();
 
-        return $this->redirectToRoute('show_sprint', ['id' => $id]);
+        return $this->redirectToRoute('sprint_show', ['id' => $id]);
     }
 
     /**
-     * @Route("/sprint/end/{id}", name="end_sprint")
+     * @Route("/sprint/{id}/end", name="sprint_end")
      * @Method({"GET"})
      */
     public function endSprintAction($id)
@@ -121,13 +116,13 @@ class SprintController extends Controller
         $objectManager->persist($sprint);
         $objectManager->flush();
 
-        return $this->redirectToRoute('show_sprint', ['id' => $id]);
+        return $this->redirectToRoute('sprint_show', ['id' => $id]);
     }
 
     /**
-     * @return \Doctrine\Common\Persistence\ObjectRepository
+     * @return ObjectRepository
      */
-    protected function getRepository(): \Doctrine\Common\Persistence\ObjectRepository
+    protected function getRepository(): ObjectRepository
     {
         return $this->getDoctrine()->getManager()->getRepository(Sprint::class);
     }

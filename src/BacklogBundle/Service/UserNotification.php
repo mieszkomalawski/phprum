@@ -1,9 +1,8 @@
 <?php
 
-
 namespace BacklogBundle\Service;
 
-
+use Psr\Log\LoggerInterface;
 use Ratchet\ConnectionInterface;
 use Ratchet\MessageComponentInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -16,52 +15,44 @@ class UserNotification implements MessageComponentInterface
     protected $connections = [];
 
     /**
-     * @var OutputInterface
+     * @var LoggerInterface
      */
-    protected $debugOutput;
+    protected $logger;
 
     /**
      * UserNotification constructor.
-     * @param OutputInterface $debugOutput
+     *
+     * @param LoggerInterface $debugOutput
      */
-    public function __construct(OutputInterface $debugOutput)
+    public function __construct(LoggerInterface $debugOutput)
     {
-        $this->debugOutput = $debugOutput;
+        $this->logger = $debugOutput;
     }
 
-
-    function onOpen(ConnectionInterface $currentConnection)
+    public function onOpen(ConnectionInterface $currentConnection): void
     {
-        $this->debugOutput->writeln('connection opened');
+        $this->logger->info('connection opened');
         $this->connections[] = $currentConnection;
         $currentConnection->send('opened');
-        $f = function (ConnectionInterface $connection) {
-            $connection->send('new user joined');
-        };
-        $this->executeOnAllOtherCollections($currentConnection, $f);
     }
 
-    function onClose(ConnectionInterface $conn)
+    public function onClose(ConnectionInterface $conn): void
     {
-        $this->debugOutput->writeln('connection closed');
+        $this->logger->info('connection closed');
         $conn->send('closed');
         $conn->close();
-        $f = function (ConnectionInterface $connection) {
-            $connection->send('user leaved');
-        };
-        $this->executeOnAllOtherCollections($conn, $f);
     }
 
-    function onError(ConnectionInterface $conn, \Exception $e)
+    public function onError(ConnectionInterface $conn, \Exception $e): void
     {
-        $this->debugOutput->writeln('error: ' . $e->getMessage());
+        $this->logger->info('error: '.$e->getMessage());
         $conn->send('error');
         $conn->close();
     }
 
-    function onMessage(ConnectionInterface $from, $msg)
+    public function onMessage(ConnectionInterface $from, $msg)
     {
-        $this->debugOutput->writeln('message received: ' . $msg);
+        $this->logger->info('message received: '.$msg);
         $f = function (ConnectionInterface $connection) use ($msg) {
             $connection->send($msg);
         };
@@ -71,27 +62,31 @@ class UserNotification implements MessageComponentInterface
     /**
      * @param $message
      */
-    public function pushMessage($message){
-        foreach ($this->connections as $connection){
+    public function pushMessage($message)
+    {
+        foreach ($this->connections as $connection) {
             $connection->send($message);
         }
     }
 
     /**
      * @param ConnectionInterface $currentConnection
+     *
      * @return array|ConnectionInterface[]
      */
     protected function getOtherConnections(ConnectionInterface $currentConnection)
     {
-        return array_filter($this->connections,
+        return array_filter(
+            $this->connections,
             function (ConnectionInterface $connection) use ($currentConnection) {
                 return $connection !== $currentConnection;
-            });
+            }
+        );
     }
 
     /**
      * @param ConnectionInterface $currentConnection
-     * @param callable $f
+     * @param callable            $f
      */
     protected function executeOnAllOtherCollections(ConnectionInterface $currentConnection, $f): void
     {
@@ -100,5 +95,4 @@ class UserNotification implements MessageComponentInterface
             $f($otherConnection);
         }
     }
-
 }

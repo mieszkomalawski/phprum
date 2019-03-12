@@ -1,5 +1,5 @@
 <?php
-
+declare(strict_types=1);
 
 namespace PHPRum\DomainModel\Backlog;
 
@@ -17,12 +17,14 @@ class SubItem extends Item
 
     /**
      * SubItem constructor.
-     * @param string $name
+     *
+     * @param string       $name
      * @param BacklogOwner $creator
      * @param CompoundItem $parentItem
      */
     public function __construct(string $name, BacklogOwner $creator, CompoundItem $parentItem)
     {
+        $this->status = ItemStatus::NEW();
         $this->name = $name;
         $this->creator = $creator;
         $this->parentItem = $parentItem;
@@ -37,7 +39,6 @@ class SubItem extends Item
         return $this->parentItem->getSprint();
     }
 
-
     public function getEpic(): ?Epic
     {
         return $this->parentItem->getEpic();
@@ -47,6 +48,4 @@ class SubItem extends Item
     {
         return $this->parentItem->isInSprint();
     }
-
-
 }

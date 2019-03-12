@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace PHPRum\DomainModel\Backlog;
 
 use BacklogBundle\Entity\User;
@@ -14,6 +16,7 @@ class Backlog
 
     /**
      * Backlog constructor.
+     *
      * @param CompoundItem[] $items
      */
     public function __construct(array $items)
@@ -32,6 +35,7 @@ class Backlog
     /**
      * @param $name
      * @param User $user
+     *
      * @return CompoundItem
      */
     public function createItem(string $name, User $user): CompoundItem
@@ -39,21 +43,26 @@ class Backlog
         $item = $this->doGetItem($name, $user);
         $this->items[] = $item;
         // get item of lowest priority ( higher int == lower prio ) and set new item with +1
-        $highestPriority = array_reduce($this->items, function ($highestPriority, CompoundItem $item) {
-            if ($item->getPriority() > $highestPriority) {
-                return $item->getPriority();
-            }
-            return $highestPriority;
-        },
+        $highestPriority = array_reduce(
+            $this->items,
+            function ($highestPriority, CompoundItem $item) {
+                if ($item->getPriority() > $highestPriority) {
+                    return $item->getPriority();
+                }
+
+                return $highestPriority;
+            },
             0
         );
-        $item->setPriority($highestPriority + 1);
+        $item->changePriority($highestPriority + 1);
+
         return $item;
     }
 
     /**
      * @param string $name
-     * @param User $user
+     * @param User   $user
+     *
      * @return CompoundItem
      */
     protected function doGetItem(string $name, User $user): CompoundItem
@@ -70,19 +79,21 @@ class Backlog
         $itemUpdated = $this->getItemById($itemId);
 
         $originalPriority = $itemUpdated->getPriority();
-        $itemUpdated->setPriority($priority);
+        $itemUpdated->changePriority($priority);
 
         // get all items with same or lower priority
         $itemsAffected = array_filter(
             $this->items,
             function (CompoundItem $item) use ($itemUpdated, $originalPriority) {
                 $priority = $item->getPriority();
-                return (
+
+                return
                     $itemUpdated->getId() !== $item->getId() &&
                     $priority >= $itemUpdated->getPriority() &&
                     $priority <= $originalPriority
-                );
-            });
+                ;
+            }
+        );
 
         if (!empty($itemsAffected)) {
             array_walk($itemsAffected, function (CompoundItem $item) {
@@ -93,7 +104,9 @@ class Backlog
 
     /**
      * @param int $itemId
+     *
      * @return CompoundItem
+     *
      * @throws ItemNotFoundException
      */
     protected function getItemById(int $itemId): CompoundItem
@@ -104,6 +117,7 @@ class Backlog
         if (empty($items)) {
             throw new ItemNotFoundException($itemId);
         }
+
         return array_shift($items);
     }
 
@@ -114,6 +128,4 @@ class Backlog
     {
         return $this->items;
     }
-
-
 }

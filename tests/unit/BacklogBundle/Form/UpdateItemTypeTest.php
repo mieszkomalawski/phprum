@@ -17,6 +17,8 @@ use Ivory\CKEditorBundle\Model\PluginManager;
 use Ivory\CKEditorBundle\Model\StylesSetManager;
 use Ivory\CKEditorBundle\Model\TemplateManager;
 use Ivory\CKEditorBundle\Model\ToolbarManager;
+use PHPRum\DomainModel\Backlog\ItemStatus;
+use PHPRum\DomainModel\Backlog\SprintDuration;
 use Symfony\Component\Form\PreloadedExtension;
 
 class UpdateItemTypeTest extends EntityAwareTypeCase
@@ -31,7 +33,7 @@ class UpdateItemTypeTest extends EntityAwareTypeCase
         return function ($class) {
             switch ($class) {
                 case Sprint::class:
-                    return [new Sprint('1_week', new User())];
+                    return [new Sprint(SprintDuration::ONE_WEEK(), new User())];
                     break;
                 case Epic::class:
                     return [new Epic('epic1', new User())];
@@ -71,11 +73,11 @@ class UpdateItemTypeTest extends EntityAwareTypeCase
     public function submitValidData()
     {
         $user = new User();
-        $sprint = new Sprint('1_week', $user);
+        $sprint = new Sprint(SprintDuration::ONE_WEEK(), $user);
         $formData = [
             'name' => 'new_name',
             'estimate' => 5,
-            'status' => CompoundItem::STAUS_IN_PROGRESS,
+            'status' => ItemStatus::IN_PROGRESS(),
             'Sprint' => $sprint
         ];
 
@@ -87,8 +89,8 @@ class UpdateItemTypeTest extends EntityAwareTypeCase
             'other_items' => []
         ]);
 
-        $object->setEstimate(5);
-        $object->setStatus(CompoundItem::STAUS_IN_PROGRESS);
+        $object->estimate(5);
+        $object->changeStatus(ItemStatus::IN_PROGRESS());
         $object->addToSprint($sprint);
 
         $form->submit($formData);

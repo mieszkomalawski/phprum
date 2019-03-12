@@ -21,3 +21,15 @@ parameters:
     jwt_private_key_path: '%kernel.root_dir%/../var/jwt/private.pem' # ssh private key path
     jwt_public_key_path:  '%kernel.root_dir%/../var/jwt/public.pem'  # ssh public key path
     jwt_token_ttl:        3600
+
+    amqp_server: 'localhost'
+    amqp_port: 5672
+    amqp_user: 'guest'
+    amqp_pass: 'guest'
+    amqp_host: '/'
+
+    websocket.host: '127.0.0.1'
+    websocket.port: '8080'
+
+    redis_host: '127.0.0.1'
+    redis_port: '6379'

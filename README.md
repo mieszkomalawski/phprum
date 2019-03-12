@@ -3,8 +3,6 @@ phprum
 
 ### What is this?
 
-
-
 Experimental project of advanced task managament app.
 
 ### Why?
